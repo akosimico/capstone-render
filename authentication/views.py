@@ -248,7 +248,7 @@ def calculate_project_progress(project_id):
 
 
 # --- Redirect logged-in user to their dashboard with token ---
-
+@login_required
 def redirect_to_dashboard(request):
     profile, _ = UserProfile.objects.get_or_create(user=request.user)
     token = make_dashboard_token(profile)
