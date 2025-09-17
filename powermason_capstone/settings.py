@@ -69,9 +69,9 @@ MESSAGE_TAGS = {
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    "whitenoise.middleware.WhiteNoiseMiddleware",
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
-    "whitenoise.middleware.WhiteNoiseMiddleware",
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
@@ -196,26 +196,27 @@ SOCIALACCOUNT_PROVIDERS = {
 XERO_CLIENT_ID = os.getenv('XERO_CLIENT_ID')
 XERO_CLIENT_SECRET = os.getenv('XERO_CLIENT_SECRET')
 XERO_REDIRECT_URI = 'http://localhost:8000/accounts/xero/login/callback/'
-
+# ======================
 # Email Configuration
-if ENVIRONMENT == 'production' or POSTGRES_LOCALLY == True:
-    EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-    EMAIL_HOST = 'smtp.gmail.com'
-    EMAIL_HOST_USER = os.getenv('EMAIL_ADDRESS')
-    EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD')
-    EMAIL_PORT = 587
-    EMAIL_USE_TLS = True  
-    EMAIL_USE_SSL = False   
-    ACCOUNT_EMAIL_SUBJECT_PREFIX = ''
-    DEFAULT_FROM_EMAIL = 'Powermason <powermasonwebsite@gmail.com>'
-    SERVER_EMAIL = 'powermasonwebsite@gmail.com'
-else:
-    EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+# ======================
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 
-# Messages Configuration - ADD THIS
+# Always log emails to console (safe for Render demo)
+ACCOUNT_EMAIL_VERIFICATION = "none"   # No confirmation required
+ACCOUNT_EMAIL_SUBJECT_PREFIX = ''
+DEFAULT_FROM_EMAIL = 'Powermason <noreply@powermason.com>'
+SERVER_EMAIL = 'noreply@powermason.com'
+
+
+# ======================
+# Messages Configuration
+# ======================
 MESSAGE_STORAGE = 'django.contrib.messages.storage.session.SessionStorage'
 
+
+# ======================
 # Allauth Configuration
+# ======================
 SOCIALACCOUNT_LOGIN_ON_GET = True
 AUTH_USER_MODEL = "authentication.CustomUser"
 ACCOUNT_USER_MODEL_USERNAME_FIELD = None
@@ -223,26 +224,23 @@ ACCOUNT_AUTHENTICATION_METHOD = "email"
 ACCOUNT_EMAIL_REQUIRED = True
 ACCOUNT_USERNAME_REQUIRED = False
 ACCOUNT_UNIQUE_EMAIL = True
-ACCOUNT_EMAIL_VERIFICATION = "mandatory"
+
 ACCOUNT_LOGIN_ON_EMAIL_CONFIRMATION = True
 ACCOUNT_CONFIRM_EMAIL_ON_GET = True
 ACCOUNT_EMAIL_CONFIRMATION_EXPIRE_DAYS = 3
 ACCOUNT_LOGIN_ATTEMPTS_LIMIT = 5
 ACCOUNT_LOGIN_ATTEMPTS_TIMEOUT = 300
 
-# Redirect URLs - ADD THESE
+# Redirect URLs
 LOGIN_REDIRECT_URL = "/"
 ACCOUNT_LOGOUT_REDIRECT_URL = "/accounts/login/"
-ACCOUNT_EMAIL_CONFIRMATION_AUTHENTICATED_REDIRECT_URL = "/"  # ← ADD THIS
-ACCOUNT_EMAIL_CONFIRMATION_ANONYMOUS_REDIRECT_URL = "/accounts/login/"  # ← ADD THIS
+ACCOUNT_EMAIL_CONFIRMATION_AUTHENTICATED_REDIRECT_URL = "/"
+ACCOUNT_EMAIL_CONFIRMATION_ANONYMOUS_REDIRECT_URL = "/accounts/login/"
 
 ACCOUNT_FORMS = {
     'signup': 'authentication.forms.CustomSignupForm',
 }
 
-# Site settings
-ACCOUNT_EMAIL_SUBJECT_PREFIX = '[Powermason] '
-
-# Custom adapter
+# Custom adapter (still enabled)
 ACCOUNT_ADAPTER = 'authentication.utils.adapters.CustomAccountAdapter'
 ACCOUNT_EMAIL_CONFIRMATION_HMAC = False
