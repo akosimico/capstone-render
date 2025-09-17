@@ -1,0 +1,483 @@
+
+{% extends "base.html" %}
+{% load static %}
+{% load role_tags %}
+{% load humanize %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    
+    <!-- Header Section -->
+    <div class="mb-8 animate-fade-in">
+        <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+            <!-- Title and Stats -->
+            <div class="flex-1">
+                <h1 class="text-3xl lg:text-4xl font-bold text-gray-900 mb-2">
+                    Direct Client Projects
+                </h1>
+                <div class="flex flex-wrap items-center gap-4 text-sm text-gray-600">
+                    <span class="flex items-center gap-2">
+                        <div class="w-2 h-2 bg-green-500 rounded-full"></div>
+                        <span>{{ projects|length }} Total Projects</span>
+                    </span>
+                    <span class="flex items-center gap-2">
+                        <div class="w-2 h-2 bg-blue-500 rounded-full"></div>
+                        <span>{{ projects|length }} Active</span>
+                    </span>
+                </div>
+            </div>
+
+            <!-- Controls -->
+            <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
+                
+                <!-- Search Bar -->
+                <div class="relative flex-1 min-w-[280px]">
+                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <svg class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                        </svg>
+                    </div>
+                    <input type="text" 
+                           id="projectSearchInput" 
+                           placeholder="Search projects, managers, or categories..."
+                           class="block w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl text-sm placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200 bg-white shadow-sm">
+                    <div class="absolute inset-y-0 right-0 pr-3 flex items-center">
+                        <kbd class="hidden sm:inline-flex items-center px-2 py-1 border border-gray-200 rounded text-xs font-sans font-medium text-gray-400">
+                            ⌘K
+                        </kbd>
+                    </div>
+                </div>
+
+                <!-- Archive Toggle -->
+                {% if user.is_superuser or user|has_role:"OM" or user|has_role:"EG" %}
+                <div class="flex items-center gap-3 bg-white px-4 py-3 rounded-xl border border-gray-200 shadow-sm">
+                    <span class="text-sm font-medium text-gray-700 whitespace-nowrap">Show Archived</span>
+                    <label class="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" id="toggleArchived" class="sr-only peer" {% if show_archived %} checked {% endif %}>
+                        <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-green-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-600"></div>
+                    </label>
+                </div>
+                {% endif %}
+
+            </div>
+        </div>
+    </div>
+
+    <!-- Projects Table Card -->
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden animate-slide-in">
+        
+        <!-- Table Header -->
+        <div class="px-6 py-4 bg-gradient-to-r from-green-50 to-emerald-50 border-b border-gray-200">
+            <div class="flex items-center justify-between">
+                <h3 class="text-lg font-semibold text-gray-900">Project Overview</h3>
+                <div class="flex items-center gap-2 text-sm text-gray-600">
+                    <span>Last updated: <span class="font-medium">just now</span></span>
+                    <div class="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Table -->
+        <div class="overflow-x-auto">
+            <table class="w-full">
+                <thead class="bg-gray-50 border-b border-gray-200">
+                    <tr>
+                        <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                            Project Details
+                        </th>
+                        <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Category</th>
+                        <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Manager</th>
+                        <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Timeline</th>
+                        <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Status</th>
+                        <th class="px-6 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="projectTableBody" class="bg-white divide-y divide-gray-100">
+                    {% for project in projects %}
+                        <tr class="hover:bg-gray-50 transition-colors duration-150 cursor-pointer group project-row"
+                            data-url="{% url 'project_view' token=token role=role project_source=project.project_source pk=project.id %}"
+                            onclick="window.location=this.dataset.url"
+                            data-project-name="{{ project.project_name }}"
+                            data-project-id="{{ project.project_id }}"
+                            data-category="{{ project.get_project_category_display }}"
+                            data-manager="{% if project.project_manager %}{{ project.project_manager.full_name }}{% else %}Unassigned{% endif %}">
+                            
+                            <!-- Project Details -->
+                            <td class="px-6 py-4">
+                                <div class="flex items-center gap-3">
+                                    <div class="flex-shrink-0 w-10 h-10 
+                                        {% if project.project_category == 'PUB' %}bg-blue-100{% elif project.project_category == 'PRI' %}bg-purple-100{% elif project.project_category == 'REN' %}bg-orange-100{% elif project.project_category == 'NEW' %}bg-green-100{% else %}bg-gray-100{% endif %} 
+                                        rounded-lg flex items-center justify-center">
+                                        {% if project.project_category == 'PUB' %}
+                                            <svg class="w-5 h-5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
+                                            </svg>
+                                        {% elif project.project_category == 'PRI' %}
+                                            <svg class="w-5 h-5 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
+                                            </svg>
+                                        {% elif project.project_category == 'REN' %}
+                                            <svg class="w-5 h-5 text-orange-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                            </svg>
+                                        {% elif project.project_category == 'NEW' %}
+                                            <svg class="w-5 h-5 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+                                            </svg>
+                                        {% else %}
+                                            <svg class="w-5 h-5 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
+                                            </svg>
+                                        {% endif %}
+                                    </div>
+                                    <div class="min-w-0 flex-1">
+                                        <p class="text-sm font-medium text-gray-900 truncate">{{ project.project_name }}</p>
+                                        <p class="text-xs text-gray-500">{{ project.project_id }}</p>
+                                    </div>
+                                </div>
+                            </td>
+
+                            <!-- Category -->
+                            <td class="px-6 py-4">
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium 
+                                    {% if project.project_category == 'PUB' %}bg-blue-100 text-blue-800{% elif project.project_category == 'PRI' %}bg-purple-100 text-purple-800{% elif project.project_category == 'REN' %}bg-orange-100 text-orange-800{% elif project.project_category == 'NEW' %}bg-green-100 text-green-800{% else %}bg-gray-100 text-gray-800{% endif %}">
+                                    {{ project.get_project_category_display }}
+                                </span>
+                            </td>
+
+                            <!-- Manager -->
+                            <td class="px-6 py-4">
+                                {% if project.project_manager %}
+                                    <div class="flex items-center gap-2">
+                                        <img class="h-8 w-8 rounded-full bg-gray-200" 
+                                             src="https://ui-avatars.com/api/?name={{ project.project_manager.full_name|urlencode }}&background=10B981&color=fff" 
+                                             alt="{{ project.project_manager.full_name }}">
+                                        <div>
+                                            <p class="text-sm font-medium text-gray-900">{{ project.project_manager.full_name }}</p>
+                                            <p class="text-xs text-gray-500">Project Manager</p>
+                                        </div>
+                                    </div>
+                                {% else %}
+                                    <div class="flex items-center gap-2">
+                                        <div class="h-8 w-8 rounded-full bg-gray-200 flex items-center justify-center">
+                                            <span class="text-xs font-medium text-gray-500">UA</span>
+                                        </div>
+                                        <div>
+                                            <p class="text-sm text-gray-400 italic">Unassigned</p>
+                                            <p class="text-xs text-gray-400">-</p>
+                                        </div>
+                                    </div>
+                                {% endif %}
+                            </td>
+
+                            <!-- Timeline -->
+                            <td class="px-6 py-4">
+                                <div class="text-sm text-gray-900">
+                                    <p class="font-medium">
+                                        {% if project.start_date %}{{ project.start_date|date:"M j" }}{% else %}TBD{% endif %} - 
+                                        {% if project.target_completion_date %}{{ project.target_completion_date|date:"M j" }}{% else %}TBD{% endif %}
+                                    </p>
+                                    <p class="text-xs text-gray-500">
+                                        {% if project.target_completion_date %}
+                                            {% with project.target_completion_date|timeuntil as time_left %}
+                                                {% if time_left %}{{ time_left }}{% else %}Timeline TBD{% endif %}
+                                            {% endwith %}
+                                        {% else %}
+                                            Timeline TBD
+                                        {% endif %}
+                                    </p>
+                                </div>
+                            </td>
+
+                            <!-- Status -->
+                            <td class="px-6 py-4">
+                                {% if user|has_role:"OM,EG" %}
+                                    <form method="POST" class="inline stop-row-click" action="{% url 'update_project_status' project.id %}">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="token" value="{{ token }}">
+                                        <input type="hidden" name="role" value="{{ role }}">
+                                        <select name="status"
+                                            class="px-3 py-1.5 text-xs font-semibold rounded-full border-0 focus:ring-2 focus:ring-green-500 cursor-pointer transition-colors
+                                            {% if project.status == 'CP' %} bg-green-100 text-green-800 hover:bg-green-200
+                                            {% elif project.status == 'OG' %} bg-blue-100 text-blue-800 hover:bg-blue-200
+                                            {% elif project.status == 'PL' %} bg-gray-100 text-gray-800 hover:bg-gray-200
+                                            {% elif project.status == 'CN' %} bg-red-100 text-red-800 hover:bg-red-200
+                                            {% else %} bg-yellow-100 text-yellow-800 hover:bg-yellow-200 {% endif %}"
+                                            onchange="this.form.submit()">
+                                            {% for code, label in project.STATUS_CHOICES %}
+                                                <option value="{{ code }}" {% if project.status == code %}selected{% endif %}>
+                                                    {{ label }}
+                                                </option>
+                                            {% endfor %}
+                                        </select>
+                                    </form>
+                                {% else %}
+                                    <span class="px-3 py-1.5 inline-flex text-xs font-semibold rounded-full
+                                        {% if project.status == 'CP' %} bg-green-100 text-green-800
+                                        {% elif project.status == 'OG' %} bg-blue-100 text-blue-800
+                                        {% elif project.status == 'PL' %} bg-gray-100 text-gray-800
+                                        {% elif project.status == 'CN' %} bg-red-100 text-red-800
+                                        {% else %} bg-yellow-100 text-yellow-800 {% endif %}">
+                                        {{ project.get_status_display }}
+                                    </span>
+                                {% endif %}
+                            </td>
+
+                            <!-- Actions -->
+                            <td class="px-6 py-4">
+                                <div class="flex items-center justify-center gap-3">
+                                    
+                                    <!-- View Tasks Button -->
+                                    <a href="{% url 'task_list' project.id token role %}?return_url={{ request.get_full_path|urlencode }}"
+                                       class="inline-flex items-center gap-2 px-3 py-1.5 bg-green-500 hover:bg-green-600 text-white text-sm font-medium rounded-md shadow-sm transition-all duration-200 stop-row-click" 
+                                       title="View Tasks"
+                                       onclick="event.stopPropagation()">
+                                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+                                        </svg>
+                                        <span class="hidden sm:inline">Tasks</span>
+                                    </a>
+
+                                    <!-- Archive/Unarchive Button -->
+                                    {% if project.archived %}
+                                        <!-- Unarchive button -->
+                                        <form method="post" action="{% url 'project_unarchive' token=token role=role project_type=project.project_source pk=project.id %}" class="stop-row-click">
+                                            {% csrf_token %}
+                                            <button type="submit"
+                                                    class="inline-flex items-center gap-2 px-3 py-1.5 bg-green-500 hover:bg-green-600 text-white text-sm font-medium rounded-md shadow-sm transition-all duration-200"
+                                                    title="Unarchive Project"
+                                                    onclick="event.stopPropagation()">
+                                                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M7.5 7.5l4.5-4.5m0 0 4.5 4.5M12 3v13.5" />
+                                                </svg>
+                                                <span class="hidden sm:inline">Restore</span>
+                                            </button>
+                                        </form>
+                                    {% else %}
+                                        <!-- Archive button -->
+                                        <a href="{% url 'project_archive' token role project.project_source project.id %}"
+                                           class="inline-flex items-center gap-2 px-3 py-1.5 bg-gray-500 hover:bg-gray-600 text-white text-sm font-medium rounded-md shadow-sm transition-all duration-200 stop-row-click"
+                                           title="Archive Project"
+                                           onclick="event.stopPropagation()">
+                                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.25 7.5l-.625 10.63a2.25 2.25 0 0 1-2.246 2.12H6.621a2.25 2.25 0 0 1-2.246-2.12L3.75 7.5m16.5 0H3.75m16.5 0a2.25 2.25 0 0 0-2.25-2.25H6a2.25 2.25 0 0 0-2.25 2.25m9.75 4.125h-3" />
+                                            </svg>
+                                            <span class="hidden sm:inline">Archive</span>
+                                        </a>
+                                    {% endif %}
+
+                                </div>
+                            </td>
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="6" class="px-6 py-12 text-center">
+                                <div class="mx-auto w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+                                    <svg class="w-12 h-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-6a2 2 0 00-2 2v1a2 2 0 01-2 2H8a2 2 0 01-2-2v-1a2 2 0 00-2-2H4"/>
+                                    </svg>
+                                </div>
+                                <h3 class="text-lg font-medium text-gray-900 mb-2">No Direct Client projects found</h3>
+                                <p class="text-gray-500">Try adjusting your search criteria or check back later.</p>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+    </div>
+</div>
+
+<!-- Toast Notification (hidden by default) -->
+<div id="toast" class="hidden fixed top-4 right-4 bg-white border border-gray-200 rounded-lg shadow-lg px-4 py-3 max-w-sm z-50">
+    <div class="flex items-center gap-3">
+        <div class="flex-shrink-0">
+            <svg id="toastIcon" class="w-5 h-5 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+            </svg>
+        </div>
+        <div class="flex-1">
+            <p id="toastMessage" class="text-sm font-medium text-gray-900"></p>
+        </div>
+        <button onclick="hideToast()" class="flex-shrink-0 text-gray-400 hover:text-gray-600">
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+            </svg>
+        </button>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    // Enhanced JavaScript functionality
+    document.addEventListener('DOMContentLoaded', function() {
+        initializeSearch();
+        initializeArchiveToggle();
+        initializeKeyboardShortcuts();
+        initializeRowClicks();
+    });
+
+    // Enhanced search functionality
+    function initializeSearch() {
+        const searchInput = document.getElementById('projectSearchInput');
+        let searchTimeout;
+
+        searchInput.addEventListener('input', function(e) {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => {
+                performSearch(e.target.value);
+            }, 300);
+        });
+
+        searchInput.addEventListener('focus', function() {
+            this.parentElement.classList.add('ring-2', 'ring-green-500');
+        });
+
+        searchInput.addEventListener('blur', function() {
+            this.parentElement.classList.remove('ring-2', 'ring-green-500');
+        });
+    }
+
+    function performSearch(query) {
+        const rows = document.querySelectorAll('.project-row');
+        let visibleCount = 0;
+
+        rows.forEach(row => {
+            const projectName = row.dataset.projectName.toLowerCase();
+            const projectId = row.dataset.projectId.toLowerCase();
+            const category = row.dataset.category.toLowerCase();
+            const manager = row.dataset.manager.toLowerCase();
+            
+            const searchText = `${projectName} ${projectId} ${category} ${manager}`;
+            const isVisible = query === '' || searchText.includes(query.toLowerCase());
+            
+            row.style.display = isVisible ? '' : 'none';
+            if (isVisible) visibleCount++;
+        });
+
+        // Show success message for search
+        if (query !== '' && visibleCount > 0) {
+            showToast(`Found ${visibleCount} project${visibleCount !== 1 ? 's' : ''} matching "${query}"`, 'success');
+        } else if (query !== '' && visibleCount === 0) {
+            showToast(`No projects found matching "${query}"`, 'info');
+        }
+    }
+
+    // Archive toggle functionality
+    function initializeArchiveToggle() {
+        const toggle = document.getElementById('toggleArchived');
+        if (toggle) {
+            toggle.addEventListener('change', function() {
+                const showArchived = this.checked ? '1' : '0';
+                const url = new URL(window.location.href);
+                url.searchParams.set('archived', showArchived);
+                
+                showToast('Updating view...', 'info');
+                setTimeout(() => {
+                    window.location.href = url.toString();
+                }, 500);
+            });
+        }
+    }
+
+    // Keyboard shortcuts
+    function initializeKeyboardShortcuts() {
+        document.addEventListener('keydown', function(e) {
+            // Cmd/Ctrl + K for search
+            if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+                e.preventDefault();
+                document.getElementById('projectSearchInput').focus();
+            }
+            
+            // Escape to close notifications
+            if (e.key === 'Escape') {
+                hideToast();
+            }
+        });
+    }
+
+    // Initialize row click handling
+    function initializeRowClicks() {
+        // Prevent the table row click when interacting with forms inside it
+        document.querySelectorAll('.stop-row-click').forEach(function(el) {
+            el.addEventListener('click', function(event) {
+                event.stopPropagation();
+            });
+        });
+    }
+// Toast notifications
+    function showToast(message, type = 'success') {
+        const toast = document.getElementById('toast');
+        const toastMessage = document.getElementById('toastMessage');
+        const toastIcon = document.getElementById('toastIcon');
+        
+        toastMessage.textContent = message;
+        
+        // Update icon and colors based on type
+        if (type === 'success') {
+            toastIcon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>';
+            toastIcon.className = 'w-5 h-5 text-green-600';
+        } else if (type === 'error') {
+            toastIcon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>';
+            toastIcon.className = 'w-5 h-5 text-red-600';
+        } else if (type === 'info') {
+            toastIcon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>';
+            toastIcon.className = 'w-5 h-5 text-blue-600';
+        }
+        
+        toast.classList.remove('hidden');
+        
+        // Auto hide after 3 seconds
+        setTimeout(() => {
+            hideToast();
+        }, 3000);
+    }
+
+    function hideToast() {
+        const toast = document.getElementById('toast');
+        if (toast) {
+            toast.classList.add('hidden');
+        }
+    }
+
+    // Add custom CSS animations
+    const style = document.createElement('style');
+    style.textContent = `
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        @keyframes slideIn {
+            from { transform: translateY(-10px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        
+        .animate-fade-in {
+            animation: fadeIn 0.3s ease-out;
+        }
+        
+        .animate-slide-in {
+            animation: slideIn 0.3s ease-out;
+        }
+        
+        /* Enhanced hover effects */
+        .group:hover .group-hover\\:scale-105 {
+            transform: scale(1.05);
+        }
+        
+        /* Smooth transitions */
+        * {
+            transition-property: color, background-color, border-color, text-decoration-color, fill, stroke, opacity, box-shadow, transform;
+            transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+            transition-duration: 150ms;
+        }
+    `;
+    document.head.appendChild(style);
+</script>
+<script src="{% static 'js/projects.js' %}"></script>
+{% endblock %}

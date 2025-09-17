@@ -1,0 +1,90 @@
+<!-- Add/Edit Modal -->
+<div id="projectTypeModal" class="modal fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
+  <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg p-6 relative">
+    <!-- Close button -->
+    <button type="button" id="modalCloseBtn" 
+  class="modalClose absolute top-4 right-4 text-gray-400 hover:text-gray-600 focus:outline-none">
+  ✕
+</button>
+
+
+    <!-- Title -->
+    <h2 id="modalTitle" class="text-2xl font-semibold text-gray-800 mb-6">Add Project Type</h2>
+
+    <!-- Form -->
+    <form id="modalForm" method="POST" class="space-y-5">
+      {% csrf_token %}
+      
+      <!-- Name -->
+      <div>
+        <label for="id_name" class="block text-sm font-medium text-gray-700">Name</label>
+        <input type="text" name="name" id="id_name" 
+          class="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 placeholder-gray-400 sm:text-sm" 
+          placeholder="Enter project type name" required>
+      </div>
+
+      <!-- Code -->
+      <div>
+        <label for="id_code" class="block text-sm font-medium text-gray-700">Code</label>
+        <input type="text" name="code" id="id_code" 
+          class="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 placeholder-gray-400 sm:text-sm" 
+          placeholder="Unique code" required>
+      </div>
+
+      <!-- Description -->
+      <div>
+        <label for="id_description" class="block text-sm font-medium text-gray-700">Description</label>
+        <textarea name="description" id="id_description" rows="3" 
+          class="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 placeholder-gray-400 sm:text-sm"
+          placeholder="Add a short description..."></textarea>
+      </div>
+
+      <!-- Active checkbox -->
+      <div class="flex items-center space-x-2">
+        <input type="checkbox" name="is_active" id="id_is_active" 
+          class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+        <label for="id_is_active" class="text-sm text-gray-700">Active</label>
+      </div>
+
+      <!-- Actions -->
+      <div class="flex justify-end space-x-3 pt-4 border-t border-gray-200">
+        <button type="button" id="modalCancelBtn" 
+          class="modalClose px-4 py-2 rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 focus:ring-2 focus:ring-gray-400 focus:outline-none">
+          Cancel
+        </button>
+        <button type="submit" id="modalSubmitBtn" 
+          class="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 focus:ring-2 focus:ring-blue-400 focus:outline-none">
+          Create
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+
+<!-- Delete Modal -->
+<div id="deleteModal" class="modal fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
+  <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 relative">
+    <!-- Close button -->
+    <button type="button" id="modalCloseBtn" 
+  class="modalClose absolute top-4 right-4 text-gray-400 hover:text-gray-600 focus:outline-none">
+  ✕
+</button>
+
+
+    <!-- Title -->
+    <h2 class="text-2xl font-semibold text-gray-800 mb-4">Delete Project Type</h2>
+    <p id="deleteText" class="text-gray-600 mb-6">Are you sure you want to delete this project type?</p>
+
+    <!-- Actions -->
+    <form id="deleteForm" method="POST" class="flex justify-end space-x-3 border-t border-gray-200 pt-4">
+      {% csrf_token %}
+      <button type="button" class="modalClose px-4 py-2 rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 focus:ring-2 focus:ring-gray-400 focus:outline-none">
+        Cancel
+      </button>
+      <button type="submit" class="px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700 focus:ring-2 focus:ring-red-400 focus:outline-none">
+        Delete
+      </button>
+    </form>
+  </div>
+</div>

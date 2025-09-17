@@ -1,0 +1,279 @@
+
+<!-- Import File Form -->
+<div class="max-w-4xl mx-auto p-6 bg-white shadow rounded-lg mb-8">
+    <h2 class="text-2xl font-semibold mb-4">Import Schedule from PDF</h2>
+    <form method="post" enctype="multipart/form-data" class="flex items-center space-x-4">
+        {% csrf_token %}
+        <input type="file" name="upload_file" accept=".pdf,.xls,.xlsx"
+               class="border rounded px-3 py-2 w-full">
+        <button type="submit" name="import_file"
+                class="bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 rounded shadow">
+            Import Tasks
+        </button>
+    </form>
+</div>
+
+<!-- Imported Tasks Preview -->
+{% if imported_data %}
+<div class="max-w-6xl mx-auto p-6 bg-white shadow rounded-lg mb-8">
+    <h2 class="text-2xl font-semibold mb-4">Imported Tasks Preview</h2>
+
+    <form method="post" action="{% url 'save_imported_tasks' project.id token role %}">
+        {% csrf_token %}
+
+        <!-- Global Default Scope & Assign To -->
+        <div class="flex flex-wrap items-start gap-6 mb-6">
+    <!-- Default Scope -->
+    <div class="flex flex-col mb-2 w-full md:w-1/2">
+        <label for="global_scope" class="font-medium text-gray-700 mb-1">Default Scope</label>
+        <input type="text" id="global_scope" name="global_scope"
+               class="border rounded px-3 py-2 w-full focus:outline-none focus:ring-2 focus:ring-blue-400"
+               placeholder="Enter default scope">
+    </div>
+
+    <!-- Default Assign To -->
+    <div class="flex flex-col relative assigned-to-container w-full md:w-1/2">
+        <label class="font-medium text-gray-700 mb-1">Default Assign To</label>
+        <input type="text" class="border rounded px-3 py-2 w-full assigned-to-input focus:outline-none focus:ring-2 focus:ring-blue-400 autocomplete-off"
+               placeholder="Search PM...">
+        <input type="hidden" class="assigned-to-hidden" name="global_assigned_to" value="">
+        <ul class="absolute bg-white border w-full mt-1 z-10 max-h-60 overflow-y-auto hidden assigned-to-suggestions rounded shadow-lg"></ul>
+    </div>
+</div>
+
+
+        <!-- Toggle for editing per-task Scope/Assign -->
+        <div class="mb-4">
+            <label class="inline-flex items-center">
+                <input type="checkbox" id="edit_individual" class="form-checkbox h-5 w-5 text-blue-600">
+                <span class="ml-2 text-gray-700 font-medium">Edit Scope / Assign To per task</span>
+            </label>
+        </div>
+
+      <!-- Editable Table -->
+<table class="min-w-full border border-gray-200 divide-y divide-gray-200 mb-4 table-auto">
+    <thead class="bg-gray-100">
+        <tr>
+            <th class="px-3 py-2 text-left text-sm font-medium text-gray-700">Task</th>
+            <th class="px-3 py-2 text-left text-sm font-medium text-gray-700 date-column">Start</th>
+            <th class="px-3 py-2 text-left text-sm font-medium text-gray-700 date-column">End</th>
+            <th class="px-3 py-2 text-left text-sm font-medium text-gray-700">Days</th>
+            <th class="px-3 py-2 text-left text-sm font-medium text-gray-700">MH</th>
+            <th class="px-3 py-2 text-left text-sm font-medium text-gray-700">Weight (%)</th>
+            <th class="px-3 py-2 text-left text-sm font-medium text-gray-700 editable-column hidden">Scope</th>
+            <th class="px-3 py-2 text-left text-sm font-medium text-gray-700 editable-column hidden">Assign To</th>
+            <th class="px-3 py-2 text-left text-sm font-medium text-gray-700">Action</th>
+        </tr>
+    </thead>
+    <tbody class="divide-y divide-gray-200">
+        {% for task in imported_data.tasks %}
+        <tr class="align-top">
+            <!-- Always editable fields -->
+            <td class="px-3 py-2">
+                <input type="text" name="task_name_{{ forloop.counter0 }}" 
+                       value="{{ task.task_name }}" 
+                       class="border rounded px-2 py-1 w-96">
+            </td>
+            <td class="px-3 py-2 date-column">
+    <input type="date" name="start_date_{{ forloop.counter0 }}" 
+           value="{{ task.start_date }}" 
+           class="border rounded px-2 py-1 w-32">
+</td>
+<td class="px-3 py-2 date-column">
+    <input type="date" name="end_date_{{ forloop.counter0 }}" 
+           value="{{ task.end_date }}" 
+           class="border rounded px-2 py-1 w-32">
+</td>
+
+            <td class="px-3 py-2">
+                <input type="number" step="0.1" name="duration_days_{{ forloop.counter0 }}" 
+                       value="{{ task.duration_days }}" 
+                       class="border rounded px-2 py-1 w-20">
+            </td>
+            <td class="px-3 py-2">
+                <input type="number" step="0.1" name="manhours_{{ forloop.counter0 }}" 
+                       value="{{ task.manhours }}" 
+                       class="border rounded px-2 py-1 w-20">
+            </td>
+            
+            <td class="px-3 py-2">
+    <input type="number" step="0.1" name="weight_{{ forloop.counter0 }}" 
+           value="{{ task.weight|default:'' }}" 
+           class="border rounded px-2 py-1 w-20" required>
+</td>
+
+            <!-- Scope -->
+            <td class="px-3 py-2 editable-column hidden">
+                <input type="text" name="scope_{{ forloop.counter0 }}" 
+                       value="{{ task.scope }}" 
+                       class="border rounded px-2 py-1 w-full">
+            </td>
+
+            <!-- Assign To -->
+            <td class="px-3 py-2 editable-column hidden relative" id="pm_row_{{ forloop.counter0 }}">
+                <input type="text" placeholder="Search PM..." 
+                       class="border rounded px-2 py-1 w-full assigned-to-input">
+                <input type="hidden" name="assigned_to_{{ forloop.counter0 }}" class="assigned-to-hidden" value="{{ task.assigned_to|default:'' }}">
+                <ul class="absolute bg-white border w-full mt-1 z-10 hidden assigned-to-suggestions max-h-60 overflow-y-auto"></ul>
+            </td>
+
+            <!-- Delete button -->
+            <td class="px-3 py-2 text-center">
+                <button type="button" class="delete-row bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600">
+                    X
+                </button>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+        <!-- Hidden Fields -->
+        <input type="hidden" name="task_count" value="{{ imported_data.tasks|length }}">
+        {{ imported_data.tasks|json_script:"tasks-data" }}
+        <input type="hidden" name="tasks_json" id="tasks_json">
+
+        <button type="submit"
+                class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded shadow">
+            Save Imported Tasks
+        </button>
+    </form>
+</div>
+
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+
+    // ---------- Delete Row & Reindex ----------
+    function reindexRows() {
+        document.querySelectorAll("tbody tr").forEach((row, index) => {
+            row.querySelectorAll("input").forEach(input => {
+                if (input.name.startsWith("task_name_")) input.name = `task_name_${index}`;
+                else if (input.name.startsWith("start_date_")) input.name = `start_date_${index}`;
+                else if (input.name.startsWith("end_date_")) input.name = `end_date_${index}`;
+                else if (input.name.startsWith("duration_days_")) input.name = `duration_days_${index}`;
+                else if (input.name.startsWith("manhours_")) input.name = `manhours_${index}`;
+                else if (input.name.startsWith("weight_")) input.name = `weight_${index}`;
+                else if (input.name.startsWith("scope_")) input.name = `scope_${index}`;
+                else if (input.name.startsWith("assigned_to_")) input.name = `assigned_to_${index}`;
+            });
+        });
+        document.querySelector("input[name='task_count']").value = document.querySelectorAll("tbody tr").length;
+    }
+
+    document.querySelectorAll(".delete-row").forEach(btn => {
+        btn.addEventListener("click", e => {
+            const row = e.target.closest("tr");
+            if (row) row.remove();
+            reindexRows();
+        });
+    });
+
+    reindexRows(); // initial reindex
+
+    // ---------- Toggle Editable Columns ----------
+    const toggle = document.getElementById("edit_individual");
+    toggle?.addEventListener("change", function() {
+        document.querySelectorAll(".editable-column").forEach(cell => {
+            cell.classList.toggle("hidden", !this.checked);
+        });
+        document.querySelectorAll(".date-column").forEach(cell => {
+            cell.classList.toggle("hidden", this.checked);
+        });
+    });
+
+    // ---------- Global Scope Update ----------
+    const globalScopeInput = document.getElementById("global_scope");
+    const scopeInputs = document.querySelectorAll("input[name^='scope_']");
+    globalScopeInput?.addEventListener("input", () => {
+        const globalValue = globalScopeInput.value.trim();
+        scopeInputs.forEach(input => input.value = globalValue || "");
+    });
+
+    // ---------- Auto-calculate Duration ----------
+    const startInput = document.getElementById("{{ form.start_date.id_for_label }}");
+    const endInput = document.getElementById("{{ form.end_date.id_for_label }}");
+    const daysInput = document.getElementById("{{ form.duration_days.id_for_label }}");
+
+    function updateDays() {
+        const start = new Date(startInput.value);
+        const end = new Date(endInput.value);
+        if (start && end && !isNaN(start) && !isNaN(end)) {
+            daysInput.value = (end < start) ? "" : Math.ceil((end - start) / (1000*60*60*24)) + 1;
+        }
+    }
+    startInput?.addEventListener("change", updateDays);
+    endInput?.addEventListener("change", updateDays);
+
+    // ---------- Assigned To Autocomplete ----------
+    function initAssignedToRow(row) {
+        const input = row.querySelector(".assigned-to-input");
+        const hidden = row.querySelector(".assigned-to-hidden");
+        const suggestionsBox = row.querySelector(".assigned-to-suggestions");
+        if (!input || !hidden || !suggestionsBox) return;
+
+        async function fetchPMs(query) {
+            const res = await fetch(`/projects/search/project-managers/?q=${encodeURIComponent(query)}`);
+            if (!res.ok) return [];
+            return await res.json();
+        }
+
+        input.addEventListener("input", async () => {
+            const query = input.value.trim();
+            suggestionsBox.innerHTML = "";
+            if (!query) return suggestionsBox.classList.add("hidden");
+
+            const results = await fetchPMs(query);
+            if (results.length === 0) return suggestionsBox.classList.add("hidden");
+
+            results.forEach(pm => {
+                const li = document.createElement("li");
+                li.className = "px-3 py-2 cursor-pointer hover:bg-gray-100";
+                li.textContent = `${pm.full_name} / ${pm.email}`;
+                li.addEventListener("click", () => {
+                    input.value = pm.full_name;
+                    hidden.value = pm.id;
+                    suggestionsBox.classList.add("hidden");
+                });
+                suggestionsBox.appendChild(li);
+            });
+            suggestionsBox.classList.remove("hidden");
+        });
+
+        document.addEventListener("click", e => {
+            if (!row.contains(e.target)) suggestionsBox.classList.add("hidden");
+        });
+    }
+
+    document.querySelectorAll("td.editable-column").forEach(row => {
+        if (row.querySelector(".assigned-to-input")) initAssignedToRow(row);
+    });
+
+    // ---------- Update tasks_json on submit ----------
+    const form = document.querySelector("form[action$='save_imported_tasks']");
+    form?.addEventListener("submit", () => {
+        const tasks = [];
+        document.querySelectorAll("tbody tr").forEach(row => {
+            const taskName = row.querySelector("input[name^='task_name_']");
+            if (!taskName?.value.trim()) return;
+            tasks.push({
+                task_name: taskName.value.trim(),
+                start_date: row.querySelector("input[name^='start_date_']")?.value || "",
+                end_date: row.querySelector("input[name^='end_date_']")?.value || "",
+                duration_days: row.querySelector("input[name^='duration_days_']")?.value || "",
+                manhours: row.querySelector("input[name^='manhours_']")?.value || "",
+                weight: row.querySelector("input[name^='weight_']")?.value || "",
+                scope: row.querySelector("input[name^='scope_']")?.value || "",
+                assigned_to: row.querySelector("input[name^='assigned_to_']")?.value || ""
+            });
+        });
+        document.getElementById("tasks_json").value = JSON.stringify(tasks);
+        document.querySelector("input[name='task_count']").value = tasks.length;
+    });
+
+    // ---------- Initialize tasks_json from server ----------
+    const tasksData = document.getElementById("tasks-data");
+    if (tasksData) document.getElementById("tasks_json").value = tasksData.textContent;
+
+});
+</script>
