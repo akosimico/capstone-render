@@ -21,7 +21,8 @@ SECRET_KEY = 'django-insecure-mgi*0-a4^pv-6109$koden*5s+c=l3@qi-2&v%rn8=u4wvmkdk
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ["capstone-render-h01i.onrender.com", "127.0.0.1", "localhost"]
+
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')

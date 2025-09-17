@@ -5,9 +5,6 @@ import tempfile
 from decimal import Decimal
 
 # Third-party libraries
-import pandas as pd
-from reportlab.pdfgen import canvas
-from reportlab.lib.pagesizes import letter
 from django.core.serializers.json import DjangoJSONEncoder
 
 # Django imports
@@ -261,20 +258,6 @@ def task_list(request, project_id, token, role):
     })
 
 
-
-def parse_excel(file):
-    df = pd.read_excel(file)
-    tasks = []
-    for _, row in df.iterrows():
-        tasks.append({
-            "task_name": row.get("Task"),
-            "start_date": row.get("Start"),
-            "end_date": row.get("End"),
-            "duration_days": row.get("Days"),
-            "manhours": row.get("MH"),
-            "scope": row.get("Scope"),
-        })
-    return tasks
 
 @require_http_methods(["POST"])
 def create_scope_ajax(request, project_id):
